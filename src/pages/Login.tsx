@@ -40,7 +40,6 @@ const Login = () => {
       const users = JSON.parse(storedUsers);
       console.log("Number of registered users:", users.length);
       
-      // Case-insensitive email comparison and exact password match
       const user = users.find((u: any) => 
         u.email.toLowerCase() === email.toLowerCase() && 
         u.password === password
@@ -52,7 +51,6 @@ const Login = () => {
         throw new Error("Invalid email or password");
       }
 
-      // Store user data without sensitive information
       const userForStorage = {
         id: user.id,
         email: user.email,
@@ -78,7 +76,7 @@ const Login = () => {
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-      <div className="flex-grow flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="flex-grow flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 mt-32">
         <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-lg shadow-md">
           <div className="text-center">
             <Logo />
