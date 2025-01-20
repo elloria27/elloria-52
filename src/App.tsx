@@ -11,6 +11,8 @@ import OrderSuccess from "./pages/OrderSuccess";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Account from "./pages/Account";
+import Admin from "./pages/Admin";
+import AdminLogin from "./pages/AdminLogin";
 
 const queryClient = new QueryClient();
 
@@ -26,6 +28,8 @@ const App = () => (
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/account" element={<Account />} />
+            <Route path="/admin" element={<Admin />} />
+            <Route path="/admin/login" element={<AdminLogin />} />
           </Routes>
           <Toaster />
           <Sonner />
