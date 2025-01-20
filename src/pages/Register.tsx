@@ -41,6 +41,8 @@ const Register = () => {
     setIsLoading(true);
 
     try {
+      console.log("Attempting to sign up with:", { email, firstName, lastName });
+      
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -52,11 +54,18 @@ const Register = () => {
         }
       });
 
-      if (error) throw error;
+      console.log("Signup response:", { data, error });
 
-      console.log("Registration successful, redirecting to:", returnUrl);
-      toast.success("Registration successful! Please check your email to verify your account.");
-      navigate(returnUrl);
+      if (error) {
+        console.error("Signup error:", error);
+        throw error;
+      }
+
+      if (data.user) {
+        console.log("User created successfully:", data.user);
+        toast.success("Registration successful! You can now sign in.");
+        navigate('/login');
+      }
     } catch (error: any) {
       console.error("Registration error:", error);
       toast.error(error.message || "Registration failed");
