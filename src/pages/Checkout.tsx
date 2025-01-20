@@ -144,21 +144,33 @@ const Checkout = () => {
     console.log("Full order details to be saved:", orderDetails);
 
     try {
-      // Get existing orders or initialize empty array
-      const existingOrders = JSON.parse(localStorage.getItem('orders') || '[]');
+      // Get existing orders
+      const existingOrdersStr = localStorage.getItem('orders');
+      console.log("Retrieved existing orders string:", existingOrdersStr);
       
-      if (!Array.isArray(existingOrders)) {
-        console.error("Existing orders is not an array, initializing new array");
-        localStorage.setItem('orders', JSON.stringify([orderDetails]));
-      } else {
-        console.log("Adding new order to existing orders");
-        localStorage.setItem('orders', JSON.stringify([...existingOrders, orderDetails]));
+      let existingOrders = [];
+      try {
+        existingOrders = existingOrdersStr ? JSON.parse(existingOrdersStr) : [];
+        if (!Array.isArray(existingOrders)) {
+          console.warn("Existing orders was not an array, resetting to empty array");
+          existingOrders = [];
+        }
+      } catch (parseError) {
+        console.error("Error parsing existing orders:", parseError);
+        existingOrders = [];
       }
+      
+      // Add new order to the array
+      const updatedOrders = [...existingOrders, orderDetails];
+      console.log("Updated orders array:", updatedOrders);
+      
+      // Save back to localStorage
+      localStorage.setItem('orders', JSON.stringify(updatedOrders));
+      console.log("Successfully saved orders to localStorage");
 
       // Store current order for success page
       localStorage.setItem('lastOrder', JSON.stringify(orderDetails));
-      console.log("Order successfully saved to localStorage");
-
+      
       // Update user profile
       updateUserProfile();
       

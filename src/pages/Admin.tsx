@@ -77,8 +77,15 @@ const Admin = () => {
         return;
       }
 
-      const parsedOrders = JSON.parse(storedOrders);
-      console.log("Parsed orders:", parsedOrders);
+      let parsedOrders;
+      try {
+        parsedOrders = JSON.parse(storedOrders);
+        console.log("Successfully parsed orders:", parsedOrders);
+      } catch (parseError) {
+        console.error("Error parsing orders:", parseError);
+        setOrders([]);
+        return;
+      }
       
       if (!Array.isArray(parsedOrders)) {
         console.error("Stored orders is not an array:", parsedOrders);
@@ -100,7 +107,7 @@ const Admin = () => {
         },
         items: order.items || [],
         total: order.total || 0,
-        currency: order.currency || 'USD',
+        currency: order.currency || 'CAD',
         status: order.status || "Processing",
         paymentStatus: order.paymentStatus || "Paid"
       }));
