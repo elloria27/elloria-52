@@ -16,7 +16,6 @@ const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Parse the return URL from the search params
   const searchParams = new URLSearchParams(location.search);
   const returnUrl = searchParams.get('returnUrl') || '/account';
 
@@ -34,21 +33,45 @@ const Login = () => {
     setIsLoading(true);
 
     try {
-      // Simulate login - replace with actual login logic
-      const storedUsers = JSON.parse(localStorage.getItem('users') || '[]');
-      const user = storedUsers.find((u: any) => u.email === email);
-
-      if (!user || user.password !== password) {
-        throw new Error("Invalid credentials");
+      // Get users from localStorage and parse it
+      const storedUsers = localStorage.getItem('users');
+      console.log("Stored users:", storedUsers);
+      
+      if (!storedUsers) {
+        throw new Error("No registered users found");
       }
 
-      localStorage.setItem('currentUser', JSON.stringify(user));
+      const users = JSON.parse(storedUsers);
+      console.log("Parsed users:", users);
+      
+      // Find user with matching email
+      const user = users.find((u: any) => u.email.toLowerCase() === email.toLowerCase());
+      console.log("Found user:", user);
+
+      if (!user) {
+        throw new Error("User not found");
+      }
+
+      // Check if password matches
+      if (user.password !== password) {
+        throw new Error("Invalid password");
+      }
+
+      // Create a user object without the password for storage
+      const userForStorage = {
+        id: user.id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email
+      };
+
+      localStorage.setItem('currentUser', JSON.stringify(userForStorage));
       console.log("Login successful, redirecting to:", returnUrl);
       toast.success("Login successful!");
       navigate(returnUrl);
     } catch (error) {
       console.error("Login error:", error);
-      toast.error("Invalid email or password");
+      toast.error(error instanceof Error ? error.message : "Invalid email or password");
     } finally {
       setIsLoading(false);
     }
