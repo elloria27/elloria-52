@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { Logo } from "@/components/header/Logo";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { supabase } from "@/integrations/supabase/client";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -16,6 +17,17 @@ const Login = () => {
 
   const searchParams = new URLSearchParams(location.search);
   const returnUrl = searchParams.get('returnUrl') || '/account';
+
+  // Check for existing session
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        navigate(returnUrl);
+      }
+    };
+    checkSession();
+  }, [navigate, returnUrl]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,45 +41,19 @@ const Login = () => {
     console.log("Login attempt - Email:", email);
 
     try {
-      const storedUsers = localStorage.getItem('users');
-      console.log("Retrieved stored users data");
-      
-      if (!storedUsers) {
-        console.error("No users found in storage");
-        throw new Error("No registered users found");
-      }
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
 
-      const users = JSON.parse(storedUsers);
-      console.log("Number of registered users:", users.length);
-      
-      const user = users.find((u: any) => 
-        u.email.toLowerCase() === email.toLowerCase() && 
-        u.password === password
-      );
-      
-      console.log("User authentication result:", user ? "Success" : "Failed");
+      if (error) throw error;
 
-      if (!user) {
-        throw new Error("Invalid email or password");
-      }
-
-      const userForStorage = {
-        id: user.id,
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        phone: user.phone,
-        address: user.address
-      };
-
-      localStorage.setItem('currentUser', JSON.stringify(userForStorage));
-      console.log("User data stored in localStorage");
-      
+      console.log("Login successful, redirecting to:", returnUrl);
       toast.success("Welcome back!");
       navigate(returnUrl);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Login error:", error);
-      toast.error(error instanceof Error ? error.message : "Login failed");
+      toast.error(error.message || "Login failed");
     } finally {
       setIsLoading(false);
     }
@@ -120,13 +106,12 @@ const Login = () => {
           <div className="mt-4 text-center">
             <p className="text-sm text-gray-600">
               Don't have an account?{" "}
-              <Button
-                variant="link"
-                className="p-0 h-auto font-normal"
-                onClick={() => navigate("/register")}
+              <Link
+                to="/register"
+                className="font-medium text-primary hover:text-primary/80"
               >
                 Create one
-              </Button>
+              </Link>
             </p>
           </div>
         </div>

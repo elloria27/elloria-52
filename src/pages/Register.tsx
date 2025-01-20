@@ -1,13 +1,13 @@
 import { useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { supabase } from "@/integrations/supabase/client";
 
 const Register = () => {
   const [firstName, setFirstName] = useState("");
@@ -19,7 +19,6 @@ const Register = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Parse the return URL from the search params
   const searchParams = new URLSearchParams(location.search);
   const returnUrl = searchParams.get('returnUrl') || '/account';
 
@@ -42,31 +41,25 @@ const Register = () => {
     setIsLoading(true);
 
     try {
-      // Simulate registration - replace with actual registration logic
-      const storedUsers = JSON.parse(localStorage.getItem('users') || '[]');
-      
-      if (storedUsers.some((user: any) => user.email === email)) {
-        throw new Error("Email already exists");
-      }
-
-      const newUser = {
-        id: Date.now(),
-        firstName,
-        lastName,
+      const { data, error } = await supabase.auth.signUp({
         email,
-        password
-      };
+        password,
+        options: {
+          data: {
+            firstName,
+            lastName
+          }
+        }
+      });
 
-      storedUsers.push(newUser);
-      localStorage.setItem('users', JSON.stringify(storedUsers));
-      localStorage.setItem('currentUser', JSON.stringify(newUser));
+      if (error) throw error;
 
       console.log("Registration successful, redirecting to:", returnUrl);
-      toast.success("Registration successful!");
+      toast.success("Registration successful! Please check your email to verify your account.");
       navigate(returnUrl);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Registration error:", error);
-      toast.error(error instanceof Error ? error.message : "Registration failed");
+      toast.error(error.message || "Registration failed");
     } finally {
       setIsLoading(false);
     }
