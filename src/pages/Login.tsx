@@ -66,9 +66,9 @@ const Login = () => {
       console.log("Login successful");
       toast.success("Login successful!");
       
-      // Redirect to previous page or home
+      // Redirect to account page
       setTimeout(() => {
-        navigate("/");
+        navigate("/account");
       }, 1500);
     } catch (error) {
       console.error("Login error:", error);

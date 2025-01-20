@@ -81,9 +81,9 @@ const Register = () => {
       console.log("Registration successful");
       toast.success("Registration successful!");
       
-      // Redirect to home page after successful registration
+      // Redirect to account page after successful registration
       setTimeout(() => {
-        navigate("/");
+        navigate("/account");
       }, 1500);
     } catch (error) {
       console.error("Registration error:", error);

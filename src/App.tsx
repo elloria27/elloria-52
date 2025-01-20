@@ -10,6 +10,7 @@ import Checkout from "./pages/Checkout";
 import OrderSuccess from "./pages/OrderSuccess";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import Account from "./pages/Account";
 
 const queryClient = new QueryClient();
 
@@ -24,6 +25,7 @@ const App = () => (
             <Route path="/order-success" element={<OrderSuccess />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/account" element={<Account />} />
           </Routes>
           <Toaster />
           <Sonner />
