@@ -69,31 +69,44 @@ const Admin = () => {
     console.log("Loading orders from localStorage");
     try {
       const storedOrders = localStorage.getItem("orders");
-      console.log("Retrieved stored orders:", storedOrders);
+      console.log("Raw stored orders:", storedOrders);
       
-      if (storedOrders) {
-        const parsedOrders = JSON.parse(storedOrders);
-        console.log("Parsed orders:", parsedOrders);
-        
-        if (!Array.isArray(parsedOrders)) {
-          console.error("Stored orders is not an array:", parsedOrders);
-          setOrders([]);
-          return;
-        }
-        
-        const ordersWithDefaults = parsedOrders.map((order: Order) => ({
-          ...order,
-          status: order.status || "Processing",
-          paymentStatus: order.paymentStatus || "Paid",
-          date: order.date || new Date().toISOString(),
-        }));
-        
-        console.log("Orders with defaults:", ordersWithDefaults);
-        setOrders(ordersWithDefaults);
-      } else {
+      if (!storedOrders) {
         console.log("No orders found in localStorage");
         setOrders([]);
+        return;
       }
+
+      const parsedOrders = JSON.parse(storedOrders);
+      console.log("Parsed orders:", parsedOrders);
+      
+      if (!Array.isArray(parsedOrders)) {
+        console.error("Stored orders is not an array:", parsedOrders);
+        setOrders([]);
+        return;
+      }
+      
+      const ordersWithDefaults = parsedOrders.map((order: Order) => ({
+        orderId: order.orderId || Math.random().toString(36).substr(2, 9).toUpperCase(),
+        date: order.date || new Date().toISOString(),
+        customerDetails: {
+          firstName: order.customerDetails?.firstName || '',
+          lastName: order.customerDetails?.lastName || '',
+          email: order.customerDetails?.email || '',
+          phone: order.customerDetails?.phone || '',
+          address: order.customerDetails?.address || '',
+          country: order.customerDetails?.country || '',
+          region: order.customerDetails?.region || ''
+        },
+        items: order.items || [],
+        total: order.total || 0,
+        currency: order.currency || 'USD',
+        status: order.status || "Processing",
+        paymentStatus: order.paymentStatus || "Paid"
+      }));
+      
+      console.log("Processed orders with defaults:", ordersWithDefaults);
+      setOrders(ordersWithDefaults);
     } catch (error) {
       console.error("Error loading orders:", error);
       toast.error("Error loading orders");

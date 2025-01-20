@@ -84,7 +84,7 @@ const Checkout = () => {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log("Starting order submission...");
+    console.log("Starting order submission process...");
 
     if (isSubmitting) {
       console.log("Submission already in progress");
@@ -128,6 +128,8 @@ const Checkout = () => {
     }));
 
     const orderDetails = {
+      orderId: Math.random().toString(36).substr(2, 9).toUpperCase(),
+      date: new Date().toISOString(),
       items: orderItems,
       subtotal: subtotalInCurrentCurrency,
       taxes,
@@ -139,35 +141,32 @@ const Checkout = () => {
       paymentStatus: "Paid"
     };
 
-    console.log("Order details:", orderDetails);
+    console.log("Full order details to be saved:", orderDetails);
 
     try {
-      console.log("Processing order...");
-      const orderId = Math.random().toString(36).substr(2, 9).toUpperCase();
+      // Get existing orders or initialize empty array
+      const existingOrders = JSON.parse(localStorage.getItem('orders') || '[]');
       
-      // Update user profile with new information
+      if (!Array.isArray(existingOrders)) {
+        console.error("Existing orders is not an array, initializing new array");
+        localStorage.setItem('orders', JSON.stringify([orderDetails]));
+      } else {
+        console.log("Adding new order to existing orders");
+        localStorage.setItem('orders', JSON.stringify([...existingOrders, orderDetails]));
+      }
+
+      // Store current order for success page
+      localStorage.setItem('lastOrder', JSON.stringify(orderDetails));
+      console.log("Order successfully saved to localStorage");
+
+      // Update user profile
       updateUserProfile();
       
-      // Store order details
-      const existingOrders = JSON.parse(localStorage.getItem('orders') || '[]');
-      const newOrder = {
-        ...orderDetails,
-        orderId,
-        date: new Date().toISOString()
-      };
-
-      console.log("Saving new order:", newOrder);
-      localStorage.setItem('orders', JSON.stringify([...existingOrders, newOrder]));
-      
-      // Store the current order details for the success page
-      localStorage.setItem('lastOrder', JSON.stringify(newOrder));
-      console.log("Order saved successfully");
-      
-      // Attempt to send confirmation emails
+      // Send confirmation emails
       await sendOrderEmails({
         customerEmail: customerDetails.email,
         customerName: `${customerDetails.firstName} ${customerDetails.lastName}`,
-        orderId,
+        orderId: orderDetails.orderId,
         items,
         total,
         shippingAddress: {
@@ -177,7 +176,7 @@ const Checkout = () => {
         }
       });
 
-      console.log("Order processed successfully");
+      console.log("Order processing completed successfully");
       clearCart();
       navigate("/order-success");
     } catch (error) {
