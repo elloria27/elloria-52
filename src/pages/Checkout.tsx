@@ -158,6 +158,9 @@ const Checkout = () => {
 
       console.log("Saving new order:", newOrder);
       localStorage.setItem('orders', JSON.stringify([...existingOrders, newOrder]));
+      
+      // Store the current order details for the success page
+      localStorage.setItem('lastOrder', JSON.stringify(newOrder));
       console.log("Order saved successfully");
       
       // Attempt to send confirmation emails
@@ -179,9 +182,7 @@ const Checkout = () => {
       navigate("/order-success");
     } catch (error) {
       console.error('Error processing order:', error);
-      clearCart();
-      navigate("/order-success");
-    } finally {
+      toast.error("There was an error processing your order. Please try again.");
       setIsSubmitting(false);
     }
   };

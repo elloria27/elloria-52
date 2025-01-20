@@ -62,6 +62,10 @@ const OrderSuccess = () => {
     if (storedOrder) {
       const parsedOrder = JSON.parse(storedOrder);
       setOrderDetails(parsedOrder);
+      // Clear the lastOrder from localStorage to prevent showing old orders
+      localStorage.removeItem('lastOrder');
+    } else {
+      console.log("No order details found in localStorage");
     }
   }, []);
 
