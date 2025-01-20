@@ -3,11 +3,20 @@ import { useNavigate } from "react-router-dom";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Search, Download, Mail, Phone } from "lucide-react";
+
+interface OrderItem {
+  name: string;
+  quantity: number;
+  price: number;
+}
 
 interface Order {
   orderId: string;
@@ -16,23 +25,17 @@ interface Order {
     firstName: string;
     lastName: string;
     email: string;
+    phone?: string;
+    address?: string;
+    country?: string;
+    region?: string;
   };
+  items?: OrderItem[];
   total: number;
   currency: string;
-  status?: string;
-  items?: Array<{
-    name: string;
-    quantity: number;
-    price: number;
-  }>;
-  shippingAddress?: {
-    street: string;
-    city: string;
-    state: string;
-    zipCode: string;
-    country: string;
-  };
-  paymentMethod?: string;
+  status: string;
+  paymentStatus?: string;
+  shippingMethod?: string;
 }
 
 const Admin = () => {
@@ -40,6 +43,9 @@ const Admin = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [dateRange, setDateRange] = useState("all");
 
   useEffect(() => {
     const currentUser = localStorage.getItem("currentUser");
@@ -60,18 +66,21 @@ const Admin = () => {
   }, [navigate]);
 
   const loadOrders = () => {
+    console.log("Loading orders from localStorage");
     const storedOrders = localStorage.getItem("orders");
     if (storedOrders) {
       const parsedOrders = JSON.parse(storedOrders);
-      const ordersWithStatus = parsedOrders.map((order: Order) => ({
+      const ordersWithDefaults = parsedOrders.map((order: Order) => ({
         ...order,
-        status: order.status || "Processing"
+        status: order.status || "Processing",
+        paymentStatus: order.paymentStatus || "Paid",
       }));
-      setOrders(ordersWithStatus);
+      setOrders(ordersWithDefaults);
     }
   };
 
   const updateOrderStatus = (orderId: string, newStatus: string) => {
+    console.log(`Updating order ${orderId} status to ${newStatus}`);
     const updatedOrders = orders.map(order => {
       if (order.orderId === orderId) {
         return { ...order, status: newStatus };
@@ -85,23 +94,87 @@ const Admin = () => {
   };
 
   const getStatusColor = (status: string) => {
-    switch (status) {
-      case "Processing":
+    switch (status.toLowerCase()) {
+      case "processing":
         return "bg-yellow-100 text-yellow-800";
-      case "Shipped":
+      case "shipped":
         return "bg-blue-100 text-blue-800";
-      case "Delivered":
+      case "delivered":
         return "bg-green-100 text-green-800";
-      case "Cancelled":
+      case "cancelled":
         return "bg-red-100 text-red-800";
       default:
         return "bg-gray-100 text-gray-800";
     }
   };
 
-  const handleOrderClick = (order: Order) => {
-    setSelectedOrder(order);
+  const getPaymentStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case "paid":
+        return "bg-green-100 text-green-800";
+      case "pending":
+        return "bg-yellow-100 text-yellow-800";
+      case "failed":
+        return "bg-red-100 text-red-800";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
   };
+
+  const handleExportOrders = () => {
+    const exportData = orders.map(order => ({
+      'Order ID': order.orderId,
+      'Date': new Date(order.date).toLocaleDateString(),
+      'Customer': `${order.customerDetails.firstName} ${order.customerDetails.lastName}`,
+      'Email': order.customerDetails.email,
+      'Total': `${order.currency} ${order.total}`,
+      'Status': order.status
+    }));
+
+    const csvContent = "data:text/csv;charset=utf-8," 
+      + Object.keys(exportData[0]).join(",") + "\n"
+      + exportData.map(row => Object.values(row).join(",")).join("\n");
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `orders_${new Date().toISOString()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success("Orders exported successfully");
+  };
+
+  const filteredOrders = orders.filter(order => {
+    const matchesSearch = 
+      order.orderId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      `${order.customerDetails.firstName} ${order.customerDetails.lastName}`
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase()) ||
+      order.customerDetails.email.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesStatus = filterStatus === "all" || order.status.toLowerCase() === filterStatus.toLowerCase();
+
+    const orderDate = new Date(order.date);
+    const now = new Date();
+    let matchesDate = true;
+
+    switch (dateRange) {
+      case "today":
+        matchesDate = orderDate.toDateString() === now.toDateString();
+        break;
+      case "week":
+        const weekAgo = new Date(now.setDate(now.getDate() - 7));
+        matchesDate = orderDate >= weekAgo;
+        break;
+      case "month":
+        const monthAgo = new Date(now.setMonth(now.getMonth() - 1));
+        matchesDate = orderDate >= monthAgo;
+        break;
+    }
+
+    return matchesSearch && matchesStatus && matchesDate;
+  });
 
   if (!isAuthorized) {
     return null;
@@ -111,8 +184,56 @@ const Admin = () => {
     <div className="min-h-screen flex flex-col">
       <Header />
       <main className="flex-grow container mx-auto px-4 py-8 mt-32">
-        <h1 className="text-2xl font-bold mb-6">Order Management</h1>
-        
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold">Order Management</h1>
+          <Button onClick={handleExportOrders} className="flex items-center gap-2">
+            <Download className="w-4 h-4" />
+            Export Orders
+          </Button>
+        </div>
+
+        <div className="grid gap-6 mb-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Quick Filters</CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-wrap gap-4">
+              <div className="flex-1 min-w-[200px]">
+                <Input
+                  placeholder="Search orders..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full"
+                  icon={<Search className="w-4 h-4" />}
+                />
+              </div>
+              <Select value={filterStatus} onValueChange={setFilterStatus}>
+                <SelectTrigger className="w-[180px] bg-white border border-gray-200">
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent className="bg-white">
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="processing">Processing</SelectItem>
+                  <SelectItem value="shipped">Shipped</SelectItem>
+                  <SelectItem value="delivered">Delivered</SelectItem>
+                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={dateRange} onValueChange={setDateRange}>
+                <SelectTrigger className="w-[180px] bg-white border border-gray-200">
+                  <SelectValue placeholder="Date range" />
+                </SelectTrigger>
+                <SelectContent className="bg-white">
+                  <SelectItem value="all">All Time</SelectItem>
+                  <SelectItem value="today">Today</SelectItem>
+                  <SelectItem value="week">Last 7 Days</SelectItem>
+                  <SelectItem value="month">Last 30 Days</SelectItem>
+                </SelectContent>
+              </Select>
+            </CardContent>
+          </Card>
+        </div>
+
         <Tabs defaultValue="orders" className="w-full">
           <TabsList>
             <TabsTrigger value="orders">Orders Overview</TabsTrigger>
@@ -127,30 +248,34 @@ const Admin = () => {
                     <TableHead>Order ID</TableHead>
                     <TableHead>Date</TableHead>
                     <TableHead>Customer</TableHead>
-                    <TableHead>Email</TableHead>
                     <TableHead>Total</TableHead>
+                    <TableHead>Payment</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {orders.map((order) => (
+                  {filteredOrders.map((order) => (
                     <TableRow 
                       key={order.orderId}
                       className="cursor-pointer hover:bg-gray-50"
-                      onClick={() => handleOrderClick(order)}
+                      onClick={() => setSelectedOrder(order)}
                     >
                       <TableCell className="font-medium">{order.orderId}</TableCell>
                       <TableCell>{new Date(order.date).toLocaleDateString()}</TableCell>
                       <TableCell>
                         {order.customerDetails.firstName} {order.customerDetails.lastName}
                       </TableCell>
-                      <TableCell>{order.customerDetails.email}</TableCell>
                       <TableCell>
                         {order.currency} {order.total.toFixed(2)}
                       </TableCell>
                       <TableCell>
-                        <Badge className={getStatusColor(order.status || "")}>
+                        <Badge className={getPaymentStatusColor(order.paymentStatus || "")}>
+                          {order.paymentStatus}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={getStatusColor(order.status)}>
                           {order.status}
                         </Badge>
                       </TableCell>
@@ -160,7 +285,7 @@ const Admin = () => {
                           onValueChange={(value) => updateOrderStatus(order.orderId, value)}
                         >
                           <SelectTrigger className="w-[180px] bg-white border border-gray-200">
-                            <SelectValue placeholder="Select status" />
+                            <SelectValue placeholder="Update status" />
                           </SelectTrigger>
                           <SelectContent className="bg-white">
                             <SelectItem value="Processing">Processing</SelectItem>
@@ -179,58 +304,71 @@ const Admin = () => {
 
           <TabsContent value="details">
             {selectedOrder ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid md:grid-cols-2 gap-6">
                 <Card>
                   <CardHeader>
-                    <CardTitle>Order Information</CardTitle>
+                    <CardTitle>Customer Information</CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div>
-                        <h3 className="font-semibold">Order ID</h3>
-                        <p>{selectedOrder.orderId}</p>
-                      </div>
-                      <div>
-                        <h3 className="font-semibold">Date</h3>
-                        <p>{new Date(selectedOrder.date).toLocaleString()}</p>
-                      </div>
-                      <div>
-                        <h3 className="font-semibold">Status</h3>
-                        <Badge className={getStatusColor(selectedOrder.status || "")}>
-                          {selectedOrder.status}
-                        </Badge>
-                      </div>
-                      <div>
-                        <h3 className="font-semibold">Total</h3>
-                        <p>{selectedOrder.currency} {selectedOrder.total.toFixed(2)}</p>
-                      </div>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <h3 className="font-semibold">Name</h3>
+                      <p>{selectedOrder.customerDetails.firstName} {selectedOrder.customerDetails.lastName}</p>
                     </div>
+                    <div>
+                      <h3 className="font-semibold flex items-center gap-2">
+                        <Mail className="w-4 h-4" /> Email
+                      </h3>
+                      <p>{selectedOrder.customerDetails.email}</p>
+                    </div>
+                    {selectedOrder.customerDetails.phone && (
+                      <div>
+                        <h3 className="font-semibold flex items-center gap-2">
+                          <Phone className="w-4 h-4" /> Phone
+                        </h3>
+                        <p>{selectedOrder.customerDetails.phone}</p>
+                      </div>
+                    )}
+                    {selectedOrder.customerDetails.address && (
+                      <div>
+                        <h3 className="font-semibold">Shipping Address</h3>
+                        <p>{selectedOrder.customerDetails.address}</p>
+                        <p>{selectedOrder.customerDetails.region}, {selectedOrder.customerDetails.country}</p>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
 
                 <Card>
                   <CardHeader>
-                    <CardTitle>Customer Information</CardTitle>
+                    <CardTitle>Order Details</CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div>
-                        <h3 className="font-semibold">Name</h3>
-                        <p>{selectedOrder.customerDetails.firstName} {selectedOrder.customerDetails.lastName}</p>
-                      </div>
-                      <div>
-                        <h3 className="font-semibold">Email</h3>
-                        <p>{selectedOrder.customerDetails.email}</p>
-                      </div>
-                      {selectedOrder.shippingAddress && (
-                        <div>
-                          <h3 className="font-semibold">Shipping Address</h3>
-                          <p>{selectedOrder.shippingAddress.street}</p>
-                          <p>{selectedOrder.shippingAddress.city}, {selectedOrder.shippingAddress.state} {selectedOrder.shippingAddress.zipCode}</p>
-                          <p>{selectedOrder.shippingAddress.country}</p>
-                        </div>
-                      )}
+                  <CardContent className="space-y-4">
+                    <div>
+                      <h3 className="font-semibold">Order ID</h3>
+                      <p>{selectedOrder.orderId}</p>
                     </div>
+                    <div>
+                      <h3 className="font-semibold">Date</h3>
+                      <p>{new Date(selectedOrder.date).toLocaleString()}</p>
+                    </div>
+                    <div>
+                      <h3 className="font-semibold">Status</h3>
+                      <Badge className={getStatusColor(selectedOrder.status)}>
+                        {selectedOrder.status}
+                      </Badge>
+                    </div>
+                    <div>
+                      <h3 className="font-semibold">Payment Status</h3>
+                      <Badge className={getPaymentStatusColor(selectedOrder.paymentStatus || "")}>
+                        {selectedOrder.paymentStatus}
+                      </Badge>
+                    </div>
+                    {selectedOrder.shippingMethod && (
+                      <div>
+                        <h3 className="font-semibold">Shipping Method</h3>
+                        <p>{selectedOrder.shippingMethod}</p>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
 
