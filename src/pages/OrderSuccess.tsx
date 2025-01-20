@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { motion } from "framer-motion";
-import { Printer, ShoppingBag, UserCircle } from "lucide-react";
+import { Printer, ShoppingBag, UserCircle, FileText } from "lucide-react";
 import { Logo } from "@/components/header/Logo";
 
 interface OrderDetails {
@@ -39,8 +39,13 @@ const OrderSuccess = () => {
   const navigate = useNavigate();
   const [orderDetails, setOrderDetails] = useState<OrderDetails | null>(null);
   const [orderStatus] = useState("Processing");
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
+    // Check if user is logged in
+    const currentUser = localStorage.getItem('currentUser');
+    setIsLoggedIn(!!currentUser);
+
     const storedOrder = localStorage.getItem('lastOrder');
     if (storedOrder) {
       const parsedOrder = JSON.parse(storedOrder);
@@ -368,10 +373,19 @@ const OrderSuccess = () => {
           <Printer className="w-4 h-4" />
           Print Invoice
         </Button>
-        <Button onClick={() => navigate("/login")} variant="default" className="gap-2">
-          <UserCircle className="w-4 h-4" />
-          Sign In
-        </Button>
+        
+        {isLoggedIn ? (
+          <Button onClick={() => navigate("/account")} variant="default" className="gap-2">
+            <FileText className="w-4 h-4" />
+            View My Purchases
+          </Button>
+        ) : (
+          <Button onClick={() => navigate("/login")} variant="default" className="gap-2">
+            <UserCircle className="w-4 h-4" />
+            Sign In
+          </Button>
+        )}
+
         <Button onClick={() => navigate("/")} variant="secondary" className="gap-2">
           <ShoppingBag className="w-4 h-4" />
           Continue Shopping
