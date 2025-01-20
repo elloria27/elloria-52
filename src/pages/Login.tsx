@@ -10,16 +10,72 @@ import { motion } from "framer-motion";
 const Login = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    email: "",
+    password: ""
+  });
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
+    console.log("Starting login process...");
     
-    // Simulate login attempt
-    setTimeout(() => {
+    // Basic validation
+    if (!formData.email || !formData.password) {
+      toast.error("Please fill in all fields");
       setIsLoading(false);
-      toast.error("Login functionality not implemented yet");
-    }, 1000);
+      return;
+    }
+
+    try {
+      // Get users from localStorage
+      const users = JSON.parse(localStorage.getItem("users") || "[]");
+      
+      // Find user with matching email
+      const user = users.find((u: any) => u.email === formData.email);
+      
+      if (!user) {
+        toast.error("No account found with this email");
+        setIsLoading(false);
+        return;
+      }
+
+      // Check password (using basic encoding for demo)
+      if (btoa(formData.password) !== user.password) {
+        toast.error("Invalid password");
+        setIsLoading(false);
+        return;
+      }
+
+      // Store current user in localStorage (excluding password)
+      localStorage.setItem("currentUser", JSON.stringify({
+        id: user.id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email
+      }));
+
+      console.log("Login successful");
+      toast.success("Login successful!");
+      
+      // Redirect to previous page or home
+      setTimeout(() => {
+        navigate("/");
+      }, 1500);
+    } catch (error) {
+      console.error("Login error:", error);
+      toast.error("An error occurred during login");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -54,6 +110,8 @@ const Login = () => {
                 autoComplete="email"
                 required
                 className="mt-1"
+                value={formData.email}
+                onChange={handleChange}
               />
             </div>
             <div>
@@ -65,6 +123,8 @@ const Login = () => {
                 autoComplete="current-password"
                 required
                 className="mt-1"
+                value={formData.password}
+                onChange={handleChange}
               />
             </div>
           </div>
