@@ -59,8 +59,15 @@ const Checkout = () => {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    console.log("Starting order submission...");
+
     if (!selectedShipping) {
       toast.error("Please select a shipping method");
+      return;
+    }
+
+    if (!country || !region) {
+      toast.error("Please select your country and region");
       return;
     }
     
@@ -76,6 +83,15 @@ const Checkout = () => {
       country,
       region
     };
+
+    // Validate required fields
+    if (!customerDetails.firstName || !customerDetails.lastName || !customerDetails.email || !customerDetails.address) {
+      setIsSubmitting(false);
+      toast.error("Please fill in all required fields");
+      return;
+    }
+    
+    console.log("Customer details:", customerDetails);
     
     const orderDetails = {
       items,
@@ -87,12 +103,16 @@ const Checkout = () => {
       customerDetails
     };
 
+    console.log("Order details:", orderDetails);
+
     try {
-      // Send order confirmation emails
+      console.log("Sending order emails...");
+      const orderId = Math.random().toString(36).substr(2, 9).toUpperCase();
+      
       await sendOrderEmails({
         customerEmail: customerDetails.email,
         customerName: `${customerDetails.firstName} ${customerDetails.lastName}`,
-        orderId: Math.random().toString(36).substr(2, 9).toUpperCase(),
+        orderId,
         items,
         total,
         shippingAddress: {
@@ -102,14 +122,14 @@ const Checkout = () => {
         }
       });
 
+      console.log("Order emails sent successfully");
       localStorage.setItem('lastOrder', JSON.stringify(orderDetails));
       clearCart();
       navigate("/order-success");
     } catch (error) {
       console.error('Error processing order:', error);
-      toast.error("There was an error processing your order. Please try again.");
-    } finally {
       setIsSubmitting(false);
+      toast.error("There was an error processing your order. Please try again.");
     }
   };
 
