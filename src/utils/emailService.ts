@@ -1,158 +1,176 @@
 import { supabase } from "@/integrations/supabase/client";
+import { CartItem } from "@/contexts/CartContext";
 
-interface OrderEmailDetails {
+interface ShippingAddress {
+  address: string;
+  region: string;
+  country: string;
+}
+
+interface EmailData {
   customerEmail: string;
   customerName: string;
   orderId: string;
-  items: Array<{
-    name: string;
-    quantity: number;
-    price: number;
-  }>;
+  items: CartItem[];
   total: number;
-  shippingAddress: {
-    address: string;
-    region: string;
-    country: string;
-  };
+  shippingAddress: ShippingAddress;
 }
 
-export const sendOrderEmails = async (orderDetails: OrderEmailDetails) => {
-  console.log("Starting email sending process with details:", orderDetails);
+export const sendOrderEmails = async (emailData: EmailData) => {
+  console.log("Sending order confirmation emails...");
+  
+  try {
+    // Send customer confirmation
+    const { data: customerEmailData, error: customerError } = await supabase.functions.invoke('send-email', {
+      body: {
+        to: [emailData.customerEmail],
+        subject: `Order Confirmation #${emailData.orderId}`,
+        html: generateCustomerEmailHtml(emailData),
+        from: "Elloria <orders@elloria.com>"
+      }
+    });
 
-  const customerEmailHtml = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-      <div style="text-align: right; color: #666;">
-        <p>Order #${orderDetails.orderId}</p>
-        <p>${new Date().toLocaleDateString()}</p>
-      </div>
+    if (customerError) {
+      console.error("Error sending customer confirmation:", customerError);
+      throw new Error("Failed to send customer confirmation email");
+    }
 
-      <div style="margin: 30px 0;">
-        <p>Dear ${orderDetails.customerName},</p>
-        
-        <p>Thank you for choosing Elloria. We are writing to confirm that we have received your order and are delighted to process it for you.</p>
-        
-        <p>Below are the details of your purchase:</p>
-        
-        <div style="background: #f9f9f9; padding: 15px; margin: 20px 0; border-radius: 5px;">
-          <h3 style="color: #333; margin-bottom: 15px;">Order Summary</h3>
-          <table style="width: 100%; border-collapse: collapse;">
-            <thead>
-              <tr style="border-bottom: 1px solid #ddd;">
-                <th style="text-align: left; padding: 8px;">Item</th>
-                <th style="text-align: center; padding: 8px;">Quantity</th>
-                <th style="text-align: right; padding: 8px;">Price</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${orderDetails.items.map(item => `
-                <tr style="border-bottom: 1px solid #eee;">
-                  <td style="padding: 8px;">${item.name}</td>
-                  <td style="text-align: center; padding: 8px;">${item.quantity}</td>
-                  <td style="text-align: right; padding: 8px;">$${(item.price * item.quantity).toFixed(2)}</td>
-                </tr>
-              `).join('')}
-              <tr>
-                <td colspan="2" style="text-align: right; padding: 8px; font-weight: bold;">Total:</td>
-                <td style="text-align: right; padding: 8px; font-weight: bold;">$${orderDetails.total.toFixed(2)}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+    console.log("Customer confirmation email sent successfully:", customerEmailData);
 
-        <div style="margin: 20px 0;">
-          <h3 style="color: #333;">Shipping Address:</h3>
-          <p style="margin: 10px 0;">
-            ${orderDetails.shippingAddress.address}<br>
-            ${orderDetails.shippingAddress.region}<br>
-            ${orderDetails.shippingAddress.country}
-          </p>
-        </div>
+    // Send admin notification
+    const { data: adminEmailData, error: adminError } = await supabase.functions.invoke('send-email', {
+      body: {
+        to: ["admin@elloria.com"],
+        subject: `New Order #${emailData.orderId}`,
+        html: generateAdminEmailHtml(emailData),
+        from: "Elloria System <system@elloria.com>"
+      }
+    });
 
-        <p>We will process your order promptly and notify you once it has been shipped. If you have any questions about your order, please don't hesitate to contact our customer service team.</p>
+    if (adminError) {
+      console.error("Error sending admin notification:", adminError);
+      // Don't throw here as customer email was sent successfully
+      return;
+    }
 
-        <p>Best regards,<br>The Elloria Team</p>
-      </div>
+    console.log("Admin notification email sent successfully:", adminEmailData);
 
-      <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #666;">
-        <p>This is an automated message, please do not reply to this email. For any inquiries, please contact us at support@elloria.ca</p>
-      </div>
-    </div>
-  `;
+  } catch (error) {
+    console.error("Error in sendOrderEmails:", error);
+    throw error;
+  }
+};
 
-  const adminEmailHtml = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-      <h2>New Order Received - #${orderDetails.orderId}</h2>
+const generateCustomerEmailHtml = (data: EmailData) => {
+  const itemsList = data.items
+    .map(item => `
+      <tr>
+        <td style="padding: 10px;">${item.name}</td>
+        <td style="padding: 10px;">${item.quantity}</td>
+        <td style="padding: 10px;">$${(item.price * item.quantity).toFixed(2)}</td>
+      </tr>
+    `)
+    .join('');
+
+  return `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h1 style="color: #333; text-align: center;">Order Confirmation</h1>
+      <p>Dear ${data.customerName},</p>
+      <p>Thank you for your order! Here are your order details:</p>
       
-      <div style="margin: 20px 0;">
-        <h3>Customer Details:</h3>
-        <p>Name: ${orderDetails.customerName}</p>
-        <p>Email: ${orderDetails.customerEmail}</p>
-      </div>
-
-      <div style="margin: 20px 0;">
-        <h3>Order Summary:</h3>
+      <div style="background-color: #f9f9f9; padding: 20px; border-radius: 5px;">
+        <h2>Order #${data.orderId}</h2>
         <table style="width: 100%; border-collapse: collapse;">
-          ${orderDetails.items.map(item => `
-            <tr>
-              <td>${item.name}</td>
-              <td style="text-align: center;">${item.quantity}</td>
-              <td style="text-align: right;">$${(item.price * item.quantity).toFixed(2)}</td>
+          <thead>
+            <tr style="background-color: #f0f0f0;">
+              <th style="padding: 10px; text-align: left;">Item</th>
+              <th style="padding: 10px; text-align: left;">Quantity</th>
+              <th style="padding: 10px; text-align: left;">Price</th>
             </tr>
-          `).join('')}
-          <tr>
-            <td colspan="2" style="text-align: right; font-weight: bold;">Total:</td>
-            <td style="text-align: right; font-weight: bold;">$${orderDetails.total.toFixed(2)}</td>
-          </tr>
+          </thead>
+          <tbody>
+            ${itemsList}
+          </tbody>
+          <tfoot>
+            <tr style="border-top: 2px solid #ddd;">
+              <td colspan="2" style="padding: 10px;"><strong>Total</strong></td>
+              <td style="padding: 10px;"><strong>$${data.total.toFixed(2)}</strong></td>
+            </tr>
+          </tfoot>
         </table>
       </div>
 
-      <div style="margin: 20px 0;">
+      <div style="margin-top: 20px;">
         <h3>Shipping Address:</h3>
         <p>
-          ${orderDetails.shippingAddress.address}<br>
-          ${orderDetails.shippingAddress.region}<br>
-          ${orderDetails.shippingAddress.country}
+          ${data.shippingAddress.address}<br>
+          ${data.shippingAddress.region}<br>
+          ${data.shippingAddress.country}
         </p>
+      </div>
+
+      <p style="margin-top: 20px;">
+        We'll notify you when your order ships. If you have any questions, please don't hesitate to contact us.
+      </p>
+
+      <div style="margin-top: 30px; text-align: center; color: #666;">
+        <p>Thank you for shopping with Elloria!</p>
       </div>
     </div>
   `;
+};
 
-  try {
-    // Send customer confirmation email
-    const { data: customerEmailData, error: customerEmailError } = await supabase.functions.invoke('send-email', {
-      body: {
-        to: [orderDetails.customerEmail],
-        subject: `Order Confirmation - #${orderDetails.orderId}`,
-        html: customerEmailHtml,
-      },
-    });
+const generateAdminEmailHtml = (data: EmailData) => {
+  const itemsList = data.items
+    .map(item => `
+      <tr>
+        <td style="padding: 10px;">${item.name}</td>
+        <td style="padding: 10px;">${item.quantity}</td>
+        <td style="padding: 10px;">$${(item.price * item.quantity).toFixed(2)}</td>
+      </tr>
+    `)
+    .join('');
 
-    if (customerEmailError) {
-      console.error('Error sending customer confirmation email:', customerEmailError);
-      throw new Error('Failed to send customer confirmation email');
-    }
+  return `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h1 style="color: #333; text-align: center;">New Order Received</h1>
+      
+      <div style="background-color: #f9f9f9; padding: 20px; border-radius: 5px;">
+        <h2>Order #${data.orderId}</h2>
+        
+        <h3>Customer Information:</h3>
+        <p>
+          Name: ${data.customerName}<br>
+          Email: ${data.customerEmail}
+        </p>
 
-    console.log('Customer confirmation email sent successfully:', customerEmailData);
+        <h3>Shipping Address:</h3>
+        <p>
+          ${data.shippingAddress.address}<br>
+          ${data.shippingAddress.region}<br>
+          ${data.shippingAddress.country}
+        </p>
 
-    // Send admin notification email
-    const { data: adminEmailData, error: adminEmailError } = await supabase.functions.invoke('send-email', {
-      body: {
-        to: ['admin@elloria.ca'],
-        subject: `New Order Received - #${orderDetails.orderId}`,
-        html: adminEmailHtml,
-      },
-    });
-
-    if (adminEmailError) {
-      console.error('Error sending admin notification email:', adminEmailError);
-      throw new Error('Failed to send admin notification email');
-    }
-
-    console.log('Admin notification email sent successfully:', adminEmailData);
-
-  } catch (error) {
-    console.error('Error in sendOrderEmails:', error);
-    throw error;
-  }
+        <h3>Order Details:</h3>
+        <table style="width: 100%; border-collapse: collapse;">
+          <thead>
+            <tr style="background-color: #f0f0f0;">
+              <th style="padding: 10px; text-align: left;">Item</th>
+              <th style="padding: 10px; text-align: left;">Quantity</th>
+              <th style="padding: 10px; text-align: left;">Price</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${itemsList}
+          </tbody>
+          <tfoot>
+            <tr style="border-top: 2px solid #ddd;">
+              <td colspan="2" style="padding: 10px;"><strong>Total</strong></td>
+              <td style="padding: 10px;"><strong>$${data.total.toFixed(2)}</strong></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+  `;
 };

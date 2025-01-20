@@ -9,6 +9,7 @@ const corsHeaders = {
 };
 
 interface EmailRequest {
+  from: string;
   to: string[];
   subject: string;
   html: string;
@@ -16,15 +17,22 @@ interface EmailRequest {
 
 const handler = async (req: Request): Promise<Response> => {
   console.log("Email function invoked");
-  
-  // Handle CORS preflight requests
+
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    if (!RESEND_API_KEY) {
+      throw new Error("RESEND_API_KEY is not set");
+    }
+
     const emailRequest: EmailRequest = await req.json();
-    console.log("Sending email with request:", emailRequest);
+    console.log("Received email request:", {
+      to: emailRequest.to,
+      subject: emailRequest.subject,
+      from: emailRequest.from
+    });
 
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -33,7 +41,7 @@ const handler = async (req: Request): Promise<Response> => {
         Authorization: `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: "Elloria <orders@elloria.ca>",
+        from: emailRequest.from,
         to: emailRequest.to,
         subject: emailRequest.subject,
         html: emailRequest.html,
@@ -51,6 +59,7 @@ const handler = async (req: Request): Promise<Response> => {
     } else {
       const error = await res.text();
       console.error("Error from Resend API:", error);
+      
       return new Response(JSON.stringify({ error }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -58,6 +67,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
   } catch (error: any) {
     console.error("Error in send-email function:", error);
+    
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
