@@ -113,7 +113,6 @@ const Checkout = () => {
       region
     };
 
-    // Validate required fields
     if (!customerDetails.firstName || !customerDetails.lastName || !customerDetails.email || !customerDetails.address) {
       setIsSubmitting(false);
       toast.error("Please fill in all required fields");
@@ -122,14 +121,22 @@ const Checkout = () => {
     
     console.log("Customer details:", customerDetails);
     
+    const orderItems = items.map(item => ({
+      name: item.name,
+      quantity: item.quantity,
+      price: item.price
+    }));
+
     const orderDetails = {
-      items,
+      items: orderItems,
       subtotal: subtotalInCurrentCurrency,
       taxes,
       shipping: selectedShippingOption,
       total,
       currency: country === "US" ? "USD" : "CAD",
-      customerDetails
+      customerDetails,
+      status: "Processing",
+      paymentStatus: "Paid"
     };
 
     console.log("Order details:", orderDetails);
@@ -148,7 +155,10 @@ const Checkout = () => {
         orderId,
         date: new Date().toISOString()
       };
+
+      console.log("Saving new order:", newOrder);
       localStorage.setItem('orders', JSON.stringify([...existingOrders, newOrder]));
+      console.log("Order saved successfully");
       
       // Attempt to send confirmation emails
       await sendOrderEmails({

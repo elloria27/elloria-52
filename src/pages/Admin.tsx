@@ -67,15 +67,30 @@ const Admin = () => {
 
   const loadOrders = () => {
     console.log("Loading orders from localStorage");
-    const storedOrders = localStorage.getItem("orders");
-    if (storedOrders) {
-      const parsedOrders = JSON.parse(storedOrders);
-      const ordersWithDefaults = parsedOrders.map((order: Order) => ({
-        ...order,
-        status: order.status || "Processing",
-        paymentStatus: order.paymentStatus || "Paid",
-      }));
-      setOrders(ordersWithDefaults);
+    try {
+      const storedOrders = localStorage.getItem("orders");
+      console.log("Retrieved stored orders:", storedOrders);
+      
+      if (storedOrders) {
+        const parsedOrders = JSON.parse(storedOrders);
+        console.log("Parsed orders:", parsedOrders);
+        
+        const ordersWithDefaults = parsedOrders.map((order: Order) => ({
+          ...order,
+          status: order.status || "Processing",
+          paymentStatus: order.paymentStatus || "Paid",
+        }));
+        
+        console.log("Orders with defaults:", ordersWithDefaults);
+        setOrders(ordersWithDefaults);
+      } else {
+        console.log("No orders found in localStorage");
+        setOrders([]);
+      }
+    } catch (error) {
+      console.error("Error loading orders:", error);
+      toast.error("Error loading orders");
+      setOrders([]);
     }
   };
 
@@ -121,30 +136,6 @@ const Admin = () => {
     }
   };
 
-  const handleExportOrders = () => {
-    const exportData = orders.map(order => ({
-      'Order ID': order.orderId,
-      'Date': new Date(order.date).toLocaleDateString(),
-      'Customer': `${order.customerDetails.firstName} ${order.customerDetails.lastName}`,
-      'Email': order.customerDetails.email,
-      'Total': `${order.currency} ${order.total}`,
-      'Status': order.status
-    }));
-
-    const csvContent = "data:text/csv;charset=utf-8," 
-      + Object.keys(exportData[0]).join(",") + "\n"
-      + exportData.map(row => Object.values(row).join(",")).join("\n");
-
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `orders_${new Date().toISOString()}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    toast.success("Orders exported successfully");
-  };
-
   const filteredOrders = orders.filter(order => {
     const matchesSearch = 
       order.orderId.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -186,7 +177,7 @@ const Admin = () => {
       <main className="flex-grow container mx-auto px-4 py-8 mt-32">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold">Order Management</h1>
-          <Button onClick={handleExportOrders} className="flex items-center gap-2">
+          <Button onClick={() => {}} className="flex items-center gap-2">
             <Download className="w-4 h-4" />
             Export Orders
           </Button>
