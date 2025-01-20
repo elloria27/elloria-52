@@ -1,13 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
-import { Header } from "@/components/Header";
-import { Footer } from "@/components/Footer";
+import { Logo } from "@/components/header/Logo";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -19,11 +15,8 @@ const Login = () => {
   const searchParams = new URLSearchParams(location.search);
   const returnUrl = searchParams.get('returnUrl') || '/account';
 
-  console.log("Login page - Return URL:", returnUrl);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Login form submitted");
     
     if (!email || !password) {
       toast.error("Please fill in all fields");
@@ -31,121 +24,103 @@ const Login = () => {
     }
 
     setIsLoading(true);
+    console.log("Attempting login with email:", email);
 
     try {
-      // Get users from localStorage and parse it
       const storedUsers = localStorage.getItem('users');
-      console.log("Stored users:", storedUsers);
+      console.log("Retrieved stored users");
       
       if (!storedUsers) {
+        console.error("No users found in storage");
         throw new Error("No registered users found");
       }
 
       const users = JSON.parse(storedUsers);
-      console.log("Parsed users:", users);
+      console.log("Number of stored users:", users.length);
       
-      // Find user with matching email
-      const user = users.find((u: any) => u.email.toLowerCase() === email.toLowerCase());
-      console.log("Found user:", user);
+      // Case-insensitive email comparison
+      const user = users.find((u: any) => 
+        u.email.toLowerCase() === email.toLowerCase() && 
+        u.password === password
+      );
+      
+      console.log("User found:", user ? "Yes" : "No");
 
       if (!user) {
-        throw new Error("User not found");
+        throw new Error("Invalid email or password");
       }
 
-      // Check if password matches
-      if (user.password !== password) {
-        throw new Error("Invalid password");
-      }
-
-      // Create a user object without the password for storage
+      // Store user data without sensitive information
       const userForStorage = {
         id: user.id,
+        email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
-        email: user.email
+        phone: user.phone,
+        address: user.address
       };
 
       localStorage.setItem('currentUser', JSON.stringify(userForStorage));
-      console.log("Login successful, redirecting to:", returnUrl);
-      toast.success("Login successful!");
+      console.log("User successfully logged in");
+      
+      toast.success("Welcome back!");
       navigate(returnUrl);
     } catch (error) {
       console.error("Login error:", error);
-      toast.error(error instanceof Error ? error.message : "Invalid email or password");
+      toast.error(error instanceof Error ? error.message : "Login failed");
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <Header />
-      <div className="flex-grow flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 mt-20">
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="max-w-md w-full space-y-8 bg-white p-8 rounded-lg shadow-md"
-        >
-          <div>
-            <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-              Sign in to your account
-            </h2>
-          </div>
-          <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="email">Email address</Label>
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="mt-1"
-                />
-              </div>
-              <div>
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  name="password"
-                  type="password"
-                  autoComplete="current-password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="mt-1"
-                />
-              </div>
-            </div>
-
-            <div>
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={isLoading}
-              >
-                {isLoading ? "Signing in..." : "Sign in"}
-              </Button>
-            </div>
-          </form>
-
-          <div className="mt-4 text-center">
-            <p className="text-sm text-gray-600">
-              Don't have an account?{" "}
-              <Link 
-                to={`/register${returnUrl !== '/account' ? `?returnUrl=${returnUrl}` : ''}`}
-                className="font-medium text-primary hover:text-primary/80"
-              >
-                Register here
-              </Link>
-            </p>
-          </div>
-        </motion.div>
+    <div className="container max-w-md mx-auto px-4 py-8">
+      <div className="text-center mb-8">
+        <Logo />
       </div>
-      <Footer />
+      
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <Input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full"
+          />
+        </div>
+        
+        <div>
+          <Input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full"
+          />
+        </div>
+
+        <Button
+          type="submit"
+          className="w-full"
+          disabled={isLoading}
+        >
+          {isLoading ? "Signing in..." : "Sign In"}
+        </Button>
+      </form>
+
+      <div className="mt-4 text-center">
+        <p className="text-sm text-gray-600">
+          Don't have an account?{" "}
+          <Button
+            variant="link"
+            className="p-0 h-auto font-normal"
+            onClick={() => navigate("/register")}
+          >
+            Create one
+          </Button>
+        </p>
+      </div>
     </div>
   );
 };
