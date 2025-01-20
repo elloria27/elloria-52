@@ -5,7 +5,7 @@ project_id = "elloria"
 [api]
 # Port to use for the API URL.
 port = 54321
-schemes = ["http", "https"]
+
 # Uncomment to enable JWT auth
 # jwt_secret = "super-secret-jwt-token-with-at-least-32-characters-long"
 # anon_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0"
@@ -50,16 +50,6 @@ double_confirm_changes = true
 # If enabled, users need to confirm their email address before signing in.
 enable_confirmations = false
 
-# Configure one of the supported auth providers.
-[auth.external.github]
-enabled = true
-client_id = ""
-secret = ""
-# Overrides the default auth redirectUrl.
-redirect_uri = ""
-# Overrides the default auth provider URL. Used to support self-hosted gitlab, single-tenant Azure,
-# or any other third-party OIDC providers.
-url = ""
-
+[functions]
 [functions.send-email]
 verify_jwt = false
