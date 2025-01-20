@@ -43,7 +43,6 @@ const Admin = () => {
   }, [navigate]);
 
   const loadOrders = () => {
-    console.log("Loading orders from localStorage");
     const storedOrders = localStorage.getItem("orders");
     if (storedOrders) {
       const parsedOrders = JSON.parse(storedOrders);
@@ -56,7 +55,6 @@ const Admin = () => {
   };
 
   const updateOrderStatus = (orderId: string, newStatus: string) => {
-    console.log(`Updating order ${orderId} status to ${newStatus}`);
     const updatedOrders = orders.map(order => {
       if (order.orderId === orderId) {
         return { ...order, status: newStatus };
@@ -76,7 +74,7 @@ const Admin = () => {
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-      <main className="flex-grow container mx-auto px-4 py-8 mt-20">
+      <main className="flex-grow container mx-auto px-4 py-8 mt-32">
         <h1 className="text-2xl font-bold mb-6">Order Management</h1>
         
         <div className="bg-white rounded-lg shadow overflow-hidden">
@@ -108,7 +106,7 @@ const Admin = () => {
                       defaultValue={order.status}
                       onValueChange={(value) => updateOrderStatus(order.orderId, value)}
                     >
-                      <SelectTrigger className="w-[180px] bg-white">
+                      <SelectTrigger className="w-[180px] bg-white border border-gray-200">
                         <SelectValue placeholder="Select status" />
                       </SelectTrigger>
                       <SelectContent>

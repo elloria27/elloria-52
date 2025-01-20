@@ -30,7 +30,7 @@ const AdminLogin = () => {
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-      <main className="flex-grow container mx-auto px-4 py-8 mt-20">
+      <main className="flex-grow container mx-auto px-4 py-8 mt-32">
         <div className="max-w-md mx-auto bg-white p-8 rounded-lg shadow-md">
           <h1 className="text-2xl font-bold mb-6">Admin Login</h1>
           <form onSubmit={handleSubmit} className="space-y-4">
