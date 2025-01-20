@@ -17,7 +17,7 @@ export const CurrencySelector = () => {
           <span className="text-xs font-medium">{currentCurrency}</span>
         </motion.button>
       </PopoverTrigger>
-      <PopoverContent className="w-40">
+      <PopoverContent className="w-40 bg-white">
         <div className="space-y-2">
           <button
             onClick={() => setCurrentCurrency("CAD")}

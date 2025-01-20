@@ -132,7 +132,7 @@ export const CustomerForm = ({
           <SelectTrigger>
             <SelectValue placeholder="Select country" />
           </SelectTrigger>
-          <SelectContent className="bg-white border shadow-lg">
+          <SelectContent className="bg-white">
             {COUNTRIES.map((c) => (
               <SelectItem key={c.code} value={c.code}>
                 {c.name}
@@ -151,7 +151,7 @@ export const CustomerForm = ({
             <SelectTrigger>
               <SelectValue placeholder={`Select ${country === "CA" ? "province" : "state"}`} />
             </SelectTrigger>
-            <SelectContent className="bg-white border shadow-lg">
+            <SelectContent className="bg-white">
               {(country === "CA" ? PROVINCES : STATES).map((r) => (
                 <SelectItem key={r} value={r}>
                   {r}

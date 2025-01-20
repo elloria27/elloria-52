@@ -17,7 +17,7 @@ export const LanguageSelector = () => {
           <span className="text-xs font-medium">{currentLanguage}</span>
         </motion.button>
       </PopoverTrigger>
-      <PopoverContent className="w-40">
+      <PopoverContent className="w-40 bg-white">
         <div className="space-y-2">
           <button
             onClick={() => setCurrentLanguage("EN")}
