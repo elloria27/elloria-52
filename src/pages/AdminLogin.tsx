@@ -13,53 +13,53 @@ const AdminLogin = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Attempting admin login");
-
-    // For demo purposes, using hardcoded admin credentials
+    
     if (email === "admin@example.com" && password === "admin123") {
-      const adminUser = {
+      const user = {
         email,
         role: "admin",
-        firstName: "Admin",
-        lastName: "User"
       };
-      localStorage.setItem("currentUser", JSON.stringify(adminUser));
-      console.log("Admin login successful");
-      toast.success("Welcome back, Admin!");
+      localStorage.setItem("currentUser", JSON.stringify(user));
+      toast.success("Login successful!");
       navigate("/admin");
     } else {
-      console.log("Admin login failed");
-      toast.error("Invalid admin credentials");
+      toast.error("Invalid credentials");
     }
   };
 
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-      <main className="flex-grow flex items-center justify-center mt-20">
-        <div className="w-full max-w-md p-8 bg-white rounded-lg shadow-md">
-          <h1 className="text-2xl font-bold text-center mb-6">Admin Login</h1>
+      <main className="flex-grow container mx-auto px-4 py-8 mt-20">
+        <div className="max-w-md mx-auto bg-white p-8 rounded-lg shadow-md">
+          <h1 className="text-2xl font-bold mb-6">Admin Login</h1>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
+              <label htmlFor="email" className="block text-sm font-medium mb-1">
+                Email
+              </label>
               <Input
+                id="email"
                 type="email"
-                placeholder="Admin Email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
               />
             </div>
             <div>
+              <label htmlFor="password" className="block text-sm font-medium mb-1">
+                Password
+              </label>
               <Input
+                id="password"
                 type="password"
-                placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
               />
             </div>
             <Button type="submit" className="w-full">
-              Login as Admin
+              Login
             </Button>
           </form>
         </div>

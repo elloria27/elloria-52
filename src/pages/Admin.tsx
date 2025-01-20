@@ -47,7 +47,6 @@ const Admin = () => {
     const storedOrders = localStorage.getItem("orders");
     if (storedOrders) {
       const parsedOrders = JSON.parse(storedOrders);
-      // Add default status if not present
       const ordersWithStatus = parsedOrders.map((order: Order) => ({
         ...order,
         status: order.status || "Processing"
@@ -109,7 +108,7 @@ const Admin = () => {
                       defaultValue={order.status}
                       onValueChange={(value) => updateOrderStatus(order.orderId, value)}
                     >
-                      <SelectTrigger className="w-[180px]">
+                      <SelectTrigger className="w-[180px] bg-white">
                         <SelectValue placeholder="Select status" />
                       </SelectTrigger>
                       <SelectContent>
