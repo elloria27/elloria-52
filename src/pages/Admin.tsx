@@ -109,7 +109,7 @@ const Admin = () => {
                       <SelectTrigger className="w-[180px] bg-white border border-gray-200">
                         <SelectValue placeholder="Select status" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="bg-white">
                         <SelectItem value="Processing">Processing</SelectItem>
                         <SelectItem value="Shipped">Shipped</SelectItem>
                         <SelectItem value="Delivered">Delivered</SelectItem>
