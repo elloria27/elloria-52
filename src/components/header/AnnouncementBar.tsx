@@ -5,7 +5,7 @@ export const AnnouncementBar = () => {
     <motion.div
       initial={{ y: -50 }}
       animate={{ y: 0 }}
-      className="bg-gradient-to-r from-primary/10 via-secondary/10 to-primary/10 text-gray-700"
+      className="bg-white bg-gradient-to-r from-primary/10 via-secondary/10 to-primary/10 text-gray-700"
     >
       <div className="container mx-auto">
         <p className="py-2 text-sm font-light tracking-wider text-center">
