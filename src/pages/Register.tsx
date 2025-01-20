@@ -10,16 +10,87 @@ import { motion } from "framer-motion";
 const Register = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    password: ""
+  });
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
+    console.log("Starting registration process...");
     
-    // Simulate registration attempt
-    setTimeout(() => {
+    // Basic validation
+    if (!formData.firstName || !formData.lastName || !formData.email || !formData.password) {
+      toast.error("Please fill in all fields");
       setIsLoading(false);
-      toast.error("Registration functionality not implemented yet");
-    }, 1000);
+      return;
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      toast.error("Please enter a valid email address");
+      setIsLoading(false);
+      return;
+    }
+
+    // Password validation (at least 8 characters)
+    if (formData.password.length < 8) {
+      toast.error("Password must be at least 8 characters long");
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      // Store user data in localStorage (temporary solution)
+      const users = JSON.parse(localStorage.getItem("users") || "[]");
+      
+      // Check if email already exists
+      if (users.some((user: any) => user.email === formData.email)) {
+        toast.error("An account with this email already exists");
+        setIsLoading(false);
+        return;
+      }
+
+      // Add new user
+      users.push({
+        id: Date.now(),
+        ...formData,
+        password: btoa(formData.password) // Basic encoding (not secure, just for demo)
+      });
+      
+      localStorage.setItem("users", JSON.stringify(users));
+      localStorage.setItem("currentUser", JSON.stringify({
+        id: Date.now(),
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email
+      }));
+
+      console.log("Registration successful");
+      toast.success("Registration successful!");
+      
+      // Redirect to home page after successful registration
+      setTimeout(() => {
+        navigate("/");
+      }, 1500);
+    } catch (error) {
+      console.error("Registration error:", error);
+      toast.error("An error occurred during registration");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -54,6 +125,8 @@ const Register = () => {
                   type="text"
                   required
                   className="mt-1"
+                  value={formData.firstName}
+                  onChange={handleChange}
                 />
               </div>
               <div>
@@ -64,6 +137,8 @@ const Register = () => {
                   type="text"
                   required
                   className="mt-1"
+                  value={formData.lastName}
+                  onChange={handleChange}
                 />
               </div>
             </div>
@@ -76,6 +151,8 @@ const Register = () => {
                 autoComplete="email"
                 required
                 className="mt-1"
+                value={formData.email}
+                onChange={handleChange}
               />
             </div>
             <div>
@@ -87,7 +164,12 @@ const Register = () => {
                 autoComplete="new-password"
                 required
                 className="mt-1"
+                value={formData.password}
+                onChange={handleChange}
               />
+              <p className="text-sm text-gray-500 mt-1">
+                Must be at least 8 characters long
+              </p>
             </div>
           </div>
 
