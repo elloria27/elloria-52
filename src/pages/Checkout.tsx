@@ -27,6 +27,10 @@ const Checkout = () => {
   const [region, setRegion] = useState("");
   const [selectedShipping, setSelectedShipping] = useState<string>("");
   const [phoneNumber, setPhoneNumber] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [address, setAddress] = useState("");
 
   const calculateTaxes = () => {
     if (!region) return { gst: 0, pst: 0, hst: 0 };
@@ -58,6 +62,26 @@ const Checkout = () => {
   const total = subtotalInCurrentCurrency + taxAmount + shippingCost;
   const currencySymbol = country === "US" ? "$" : "CAD $";
 
+  const updateUserProfile = () => {
+    console.log("Updating user profile with checkout information");
+    const currentUser = localStorage.getItem("currentUser");
+    if (currentUser) {
+      const userData = JSON.parse(currentUser);
+      const updatedUser = {
+        ...userData,
+        firstName: firstName || userData.firstName,
+        lastName: lastName || userData.lastName,
+        email: email || userData.email,
+        phoneNumber: phoneNumber || userData.phoneNumber,
+        country: country || userData.country,
+        region: region || userData.region,
+        address: address || userData.address,
+      };
+      localStorage.setItem("currentUser", JSON.stringify(updatedUser));
+      console.log("User profile updated with new information");
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     console.log("Starting order submission...");
@@ -79,13 +103,12 @@ const Checkout = () => {
     
     setIsSubmitting(true);
     
-    const formData = new FormData(e.currentTarget);
     const customerDetails = {
-      firstName: formData.get('firstName') as string,
-      lastName: formData.get('lastName') as string,
-      email: formData.get('email') as string,
+      firstName,
+      lastName,
+      email,
       phone: phoneNumber,
-      address: formData.get('address') as string,
+      address,
       country,
       region
     };
@@ -115,8 +138,17 @@ const Checkout = () => {
       console.log("Processing order...");
       const orderId = Math.random().toString(36).substr(2, 9).toUpperCase();
       
-      // Store order details first
-      localStorage.setItem('lastOrder', JSON.stringify(orderDetails));
+      // Update user profile with new information
+      updateUserProfile();
+      
+      // Store order details
+      const existingOrders = JSON.parse(localStorage.getItem('orders') || '[]');
+      const newOrder = {
+        ...orderDetails,
+        orderId,
+        date: new Date().toISOString()
+      };
+      localStorage.setItem('orders', JSON.stringify([...existingOrders, newOrder]));
       
       // Attempt to send confirmation emails
       await sendOrderEmails({
@@ -137,7 +169,6 @@ const Checkout = () => {
       navigate("/order-success");
     } catch (error) {
       console.error('Error processing order:', error);
-      // Even if email fails, we've stored the order, so we can proceed
       clearCart();
       navigate("/order-success");
     } finally {
@@ -182,6 +213,14 @@ const Checkout = () => {
                 setRegion={setRegion}
                 phoneNumber={phoneNumber}
                 setPhoneNumber={setPhoneNumber}
+                firstName={firstName}
+                setFirstName={setFirstName}
+                lastName={lastName}
+                setLastName={setLastName}
+                email={email}
+                setEmail={setEmail}
+                address={address}
+                setAddress={setAddress}
               />
 
               {country && (

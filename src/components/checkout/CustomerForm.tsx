@@ -1,6 +1,7 @@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useEffect } from "react";
 
 interface CustomerFormProps {
   country: string;
@@ -9,6 +10,14 @@ interface CustomerFormProps {
   setRegion: (value: string) => void;
   phoneNumber: string;
   setPhoneNumber: (value: string) => void;
+  firstName: string;
+  setFirstName: (value: string) => void;
+  lastName: string;
+  setLastName: (value: string) => void;
+  email: string;
+  setEmail: (value: string) => void;
+  address: string;
+  setAddress: (value: string) => void;
 }
 
 const COUNTRIES = [
@@ -42,23 +51,65 @@ export const CustomerForm = ({
   setRegion,
   phoneNumber,
   setPhoneNumber,
+  firstName,
+  setFirstName,
+  lastName,
+  setLastName,
+  email,
+  setEmail,
+  address,
+  setAddress,
 }: CustomerFormProps) => {
+  useEffect(() => {
+    console.log("Loading user profile data into checkout form");
+    const currentUser = localStorage.getItem("currentUser");
+    if (currentUser) {
+      const userData = JSON.parse(currentUser);
+      if (userData.firstName) setFirstName(userData.firstName);
+      if (userData.lastName) setLastName(userData.lastName);
+      if (userData.email) setEmail(userData.email);
+      if (userData.phoneNumber) setPhoneNumber(userData.phoneNumber);
+      if (userData.country) setCountry(userData.country);
+      if (userData.region) setRegion(userData.region);
+      if (userData.address) setAddress(userData.address);
+    }
+  }, []);
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="firstName">First Name</Label>
-          <Input id="firstName" name="firstName" required />
+          <Input 
+            id="firstName" 
+            name="firstName" 
+            value={firstName}
+            onChange={(e) => setFirstName(e.target.value)}
+            required 
+          />
         </div>
         <div className="space-y-2">
           <Label htmlFor="lastName">Last Name</Label>
-          <Input id="lastName" name="lastName" required />
+          <Input 
+            id="lastName" 
+            name="lastName" 
+            value={lastName}
+            onChange={(e) => setLastName(e.target.value)}
+            required 
+          />
         </div>
       </div>
       
       <div className="space-y-2">
         <Label htmlFor="email">Email</Label>
-        <Input id="email" name="email" type="email" required />
+        <Input 
+          id="email" 
+          name="email" 
+          type="email" 
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required 
+        />
       </div>
 
       <div className="space-y-2">
@@ -113,7 +164,13 @@ export const CustomerForm = ({
       
       <div className="space-y-2">
         <Label htmlFor="address">Address</Label>
-        <Input id="address" name="address" required />
+        <Input 
+          id="address" 
+          name="address" 
+          value={address}
+          onChange={(e) => setAddress(e.target.value)}
+          required 
+        />
       </div>
     </div>
   );
