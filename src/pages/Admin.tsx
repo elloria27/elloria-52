@@ -75,10 +75,17 @@ const Admin = () => {
         const parsedOrders = JSON.parse(storedOrders);
         console.log("Parsed orders:", parsedOrders);
         
+        if (!Array.isArray(parsedOrders)) {
+          console.error("Stored orders is not an array:", parsedOrders);
+          setOrders([]);
+          return;
+        }
+        
         const ordersWithDefaults = parsedOrders.map((order: Order) => ({
           ...order,
           status: order.status || "Processing",
           paymentStatus: order.paymentStatus || "Paid",
+          date: order.date || new Date().toISOString(),
         }));
         
         console.log("Orders with defaults:", ordersWithDefaults);
