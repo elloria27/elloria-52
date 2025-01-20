@@ -1,95 +1,72 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { UserPlus } from "lucide-react";
 import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 
 const Register = () => {
-  const navigate = useNavigate();
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    password: ""
-  });
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
+  // Parse the return URL from the search params
+  const searchParams = new URLSearchParams(location.search);
+  const returnUrl = searchParams.get('returnUrl') || '/account';
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  console.log("Register page - Return URL:", returnUrl);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-    console.log("Starting registration process...");
-    
-    // Basic validation
-    if (!formData.firstName || !formData.lastName || !formData.email || !formData.password) {
+    console.log("Register form submitted");
+
+    if (!firstName || !lastName || !email || !password || !confirmPassword) {
       toast.error("Please fill in all fields");
-      setIsLoading(false);
       return;
     }
 
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(formData.email)) {
-      toast.error("Please enter a valid email address");
-      setIsLoading(false);
+    if (password !== confirmPassword) {
+      toast.error("Passwords do not match");
       return;
     }
 
-    // Password validation (at least 8 characters)
-    if (formData.password.length < 8) {
-      toast.error("Password must be at least 8 characters long");
-      setIsLoading(false);
-      return;
-    }
+    setIsLoading(true);
 
     try {
-      // Store user data in localStorage (temporary solution)
-      const users = JSON.parse(localStorage.getItem("users") || "[]");
+      // Simulate registration - replace with actual registration logic
+      const storedUsers = JSON.parse(localStorage.getItem('users') || '[]');
       
-      // Check if email already exists
-      if (users.some((user: any) => user.email === formData.email)) {
-        toast.error("An account with this email already exists");
-        setIsLoading(false);
-        return;
+      if (storedUsers.some((user: any) => user.email === email)) {
+        throw new Error("Email already exists");
       }
 
-      // Add new user
-      users.push({
+      const newUser = {
         id: Date.now(),
-        ...formData,
-        password: btoa(formData.password) // Basic encoding (not secure, just for demo)
-      });
-      
-      localStorage.setItem("users", JSON.stringify(users));
-      localStorage.setItem("currentUser", JSON.stringify({
-        id: Date.now(),
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        email: formData.email
-      }));
+        firstName,
+        lastName,
+        email,
+        password
+      };
 
-      console.log("Registration successful");
+      storedUsers.push(newUser);
+      localStorage.setItem('users', JSON.stringify(storedUsers));
+      localStorage.setItem('currentUser', JSON.stringify(newUser));
+
+      console.log("Registration successful, redirecting to:", returnUrl);
       toast.success("Registration successful!");
-      
-      // Redirect to account page after successful registration
-      setTimeout(() => {
-        navigate("/account");
-      }, 1500);
+      navigate(returnUrl);
     } catch (error) {
       console.error("Registration error:", error);
-      toast.error("An error occurred during registration");
+      toast.error(error instanceof Error ? error.message : "Registration failed");
     } finally {
       setIsLoading(false);
     }
@@ -102,47 +79,38 @@ const Register = () => {
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="max-w-md w-full space-y-8 bg-white p-8 rounded-lg shadow-lg"
+          className="max-w-md w-full space-y-8 bg-white p-8 rounded-lg shadow-md"
         >
           <div>
             <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
               Create your account
             </h2>
-            <p className="mt-2 text-center text-sm text-gray-600">
-              Already have an account?{" "}
-              <button
-                onClick={() => navigate("/login")}
-                className="font-medium text-primary hover:text-primary/90"
-              >
-                Sign in
-              </button>
-            </p>
           </div>
           <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="firstName">First name</Label>
+                  <Label htmlFor="firstName">First Name</Label>
                   <Input
                     id="firstName"
                     name="firstName"
                     type="text"
                     required
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
                     className="mt-1"
-                    value={formData.firstName}
-                    onChange={handleChange}
                   />
                 </div>
                 <div>
-                  <Label htmlFor="lastName">Last name</Label>
+                  <Label htmlFor="lastName">Last Name</Label>
                   <Input
                     id="lastName"
                     name="lastName"
                     type="text"
                     required
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
                     className="mt-1"
-                    value={formData.lastName}
-                    onChange={handleChange}
                   />
                 </div>
               </div>
@@ -154,9 +122,9 @@ const Register = () => {
                   type="email"
                   autoComplete="email"
                   required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   className="mt-1"
-                  value={formData.email}
-                  onChange={handleChange}
                 />
               </div>
               <div>
@@ -167,25 +135,48 @@ const Register = () => {
                   type="password"
                   autoComplete="new-password"
                   required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   className="mt-1"
-                  value={formData.password}
-                  onChange={handleChange}
                 />
-                <p className="text-sm text-gray-500 mt-1">
-                  Must be at least 8 characters long
-                </p>
+              </div>
+              <div>
+                <Label htmlFor="confirmPassword">Confirm Password</Label>
+                <Input
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  type="password"
+                  autoComplete="new-password"
+                  required
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="mt-1"
+                />
               </div>
             </div>
 
-            <Button
-              type="submit"
-              className="w-full flex justify-center gap-2"
-              disabled={isLoading}
-            >
-              <UserPlus className="h-5 w-5" />
-              {isLoading ? "Creating account..." : "Create account"}
-            </Button>
+            <div>
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={isLoading}
+              >
+                {isLoading ? "Creating account..." : "Create account"}
+              </Button>
+            </div>
           </form>
+
+          <div className="mt-4 text-center">
+            <p className="text-sm text-gray-600">
+              Already have an account?{" "}
+              <Link 
+                to={`/login${returnUrl !== '/account' ? `?returnUrl=${returnUrl}` : ''}`}
+                className="font-medium text-primary hover:text-primary/80"
+              >
+                Sign in
+              </Link>
+            </p>
+          </div>
         </motion.div>
       </div>
       <Footer />

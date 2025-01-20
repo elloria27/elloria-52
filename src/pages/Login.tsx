@@ -1,80 +1,54 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { LogIn } from "lucide-react";
 import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 
 const Login = () => {
-  const navigate = useNavigate();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    email: "",
-    password: ""
-  });
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
+  // Parse the return URL from the search params
+  const searchParams = new URLSearchParams(location.search);
+  const returnUrl = searchParams.get('returnUrl') || '/account';
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  console.log("Login page - Return URL:", returnUrl);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-    console.log("Starting login process...");
+    console.log("Login form submitted");
     
-    // Basic validation
-    if (!formData.email || !formData.password) {
+    if (!email || !password) {
       toast.error("Please fill in all fields");
-      setIsLoading(false);
       return;
     }
 
+    setIsLoading(true);
+
     try {
-      // Get users from localStorage
-      const users = JSON.parse(localStorage.getItem("users") || "[]");
-      
-      // Find user with matching email
-      const user = users.find((u: any) => u.email === formData.email);
-      
-      if (!user) {
-        toast.error("No account found with this email");
-        setIsLoading(false);
-        return;
+      // Simulate login - replace with actual login logic
+      const storedUsers = JSON.parse(localStorage.getItem('users') || '[]');
+      const user = storedUsers.find((u: any) => u.email === email);
+
+      if (!user || user.password !== password) {
+        throw new Error("Invalid credentials");
       }
 
-      // Check password (using basic encoding for demo)
-      if (btoa(formData.password) !== user.password) {
-        toast.error("Invalid password");
-        setIsLoading(false);
-        return;
-      }
-
-      // Store current user in localStorage (excluding password)
-      localStorage.setItem("currentUser", JSON.stringify({
-        id: user.id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email
-      }));
-
-      console.log("Login successful");
+      localStorage.setItem('currentUser', JSON.stringify(user));
+      console.log("Login successful, redirecting to:", returnUrl);
       toast.success("Login successful!");
-      
-      // Redirect to account page
-      setTimeout(() => {
-        navigate("/account");
-      }, 1500);
+      navigate(returnUrl);
     } catch (error) {
       console.error("Login error:", error);
-      toast.error("An error occurred during login");
+      toast.error("Invalid email or password");
     } finally {
       setIsLoading(false);
     }
@@ -87,21 +61,12 @@ const Login = () => {
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="max-w-md w-full space-y-8 bg-white p-8 rounded-lg shadow-lg"
+          className="max-w-md w-full space-y-8 bg-white p-8 rounded-lg shadow-md"
         >
           <div>
             <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
               Sign in to your account
             </h2>
-            <p className="mt-2 text-center text-sm text-gray-600">
-              Or{" "}
-              <button
-                onClick={() => navigate("/register")}
-                className="font-medium text-primary hover:text-primary/90"
-              >
-                create a new account
-              </button>
-            </p>
           </div>
           <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
             <div className="space-y-4">
@@ -113,9 +78,9 @@ const Login = () => {
                   type="email"
                   autoComplete="email"
                   required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   className="mt-1"
-                  value={formData.email}
-                  onChange={handleChange}
                 />
               </div>
               <div>
@@ -126,30 +91,35 @@ const Login = () => {
                   type="password"
                   autoComplete="current-password"
                   required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   className="mt-1"
-                  value={formData.password}
-                  onChange={handleChange}
                 />
               </div>
             </div>
 
-            <div className="flex items-center justify-between">
-              <div className="text-sm">
-                <a href="#" className="font-medium text-primary hover:text-primary/90">
-                  Forgot your password?
-                </a>
-              </div>
+            <div>
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={isLoading}
+              >
+                {isLoading ? "Signing in..." : "Sign in"}
+              </Button>
             </div>
-
-            <Button
-              type="submit"
-              className="w-full flex justify-center gap-2"
-              disabled={isLoading}
-            >
-              <LogIn className="h-5 w-5" />
-              {isLoading ? "Signing in..." : "Sign in"}
-            </Button>
           </form>
+
+          <div className="mt-4 text-center">
+            <p className="text-sm text-gray-600">
+              Don't have an account?{" "}
+              <Link 
+                to={`/register${returnUrl !== '/account' ? `?returnUrl=${returnUrl}` : ''}`}
+                className="font-medium text-primary hover:text-primary/80"
+              >
+                Register here
+              </Link>
+            </p>
+          </div>
         </motion.div>
       </div>
       <Footer />
