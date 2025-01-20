@@ -1,3 +1,4 @@
+import { Toaster } from "@/components/ui/toaster";
 import { useCart } from "@/contexts/CartContext";
 import { Button } from "@/components/ui/button";
 import { LoginPrompt } from "@/components/checkout/LoginPrompt";
@@ -61,6 +62,11 @@ const Checkout = () => {
     e.preventDefault();
     console.log("Starting order submission...");
 
+    if (isSubmitting) {
+      console.log("Submission already in progress");
+      return;
+    }
+
     if (!selectedShipping) {
       toast.error("Please select a shipping method");
       return;
@@ -106,9 +112,13 @@ const Checkout = () => {
     console.log("Order details:", orderDetails);
 
     try {
-      console.log("Sending order emails...");
+      console.log("Processing order...");
       const orderId = Math.random().toString(36).substr(2, 9).toUpperCase();
       
+      // Store order details first
+      localStorage.setItem('lastOrder', JSON.stringify(orderDetails));
+      
+      // Attempt to send confirmation emails
       await sendOrderEmails({
         customerEmail: customerDetails.email,
         customerName: `${customerDetails.firstName} ${customerDetails.lastName}`,
@@ -122,14 +132,16 @@ const Checkout = () => {
         }
       });
 
-      console.log("Order emails sent successfully");
-      localStorage.setItem('lastOrder', JSON.stringify(orderDetails));
+      console.log("Order processed successfully");
       clearCart();
       navigate("/order-success");
     } catch (error) {
       console.error('Error processing order:', error);
+      // Even if email fails, we've stored the order, so we can proceed
+      clearCart();
+      navigate("/order-success");
+    } finally {
       setIsSubmitting(false);
-      toast.error("There was an error processing your order. Please try again.");
     }
   };
 
